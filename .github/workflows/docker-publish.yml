@@ -38,9 +38,9 @@ jobs:
 
       # 4. Build and publish Docker image
       - name: Build and Push Image
-        uses: docker/build-push-action@v7
-        with:
-          context: ./GITHUB_ACTIONS
-          file: ./GITHUB_ACTIONS/Dockerfile
-          push: true
-          tags: kanishkabhatt10/fastapi-health:latest
+  uses: docker/build-push-action@v7
+  with:
+    context: .
+    file: ./Dockerfile
+    push: true
+    tags: ${{ secrets.DOCKER_USERNAME }}/fastapi-health:latest
