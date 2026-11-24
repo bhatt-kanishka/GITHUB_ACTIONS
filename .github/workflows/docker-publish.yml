@@ -1,0 +1,46 @@
+name: FastAPI Docker CI/CD
+
+# Trigger when code is pushed to main
+on:
+  push:
+    branches:
+      - main
+
+  # Allow manual execution
+  workflow_dispatch:
+
+# Minimum repository permission required
+permissions:
+  contents: read
+
+jobs:
+  build-and-push:
+
+    # GitHub provides a temporary Ubuntu runner
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # 1. Download source code
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      # 2. Login to Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 3. Setup Docker Buildx
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # 4. Build and publish Docker image
+      - name: Build and Push Image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./FASTapi_handsON
+          file: ./FASTapi_handsON/Dockerfile
+          push: true
+          tags: gerrordev/fastapi-health:latest
