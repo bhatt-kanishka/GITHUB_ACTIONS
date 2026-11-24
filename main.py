@@ -12,3 +12,10 @@ def home():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+# Newly added route
+@app.get("/new")
+def new_route():
+    return {
+        "message": "Updated automatically using GitHub Actions!"
+    }
