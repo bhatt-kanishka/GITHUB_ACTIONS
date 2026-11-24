@@ -43,4 +43,4 @@ jobs:
           context: ./FASTapi_handsON
           file: ./FASTapi_handsON/Dockerfile
           push: true
-          tags: gerrordev/fastapi-health:latest
+          tags: kanishkabhatt10/fastapi-health:latest
