@@ -40,7 +40,7 @@ jobs:
       - name: Build and Push Image
         uses: docker/build-push-action@v7
         with:
-          context: ./FASTapi_handsON
-          file: ./FASTapi_handsON/Dockerfile
+          context: ./GITHUB_ACTIONS
+          file: ./GITHUB_ACTIONS/Dockerfile
           push: true
           tags: kanishkabhatt10/fastapi-health:latest
