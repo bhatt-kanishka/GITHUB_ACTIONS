@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # Primary standalone Student API service (default for simple local runs)
+  student-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: student-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # Scaled Instance 1 (used for horizontal scaling demonstration)
+  student-api-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: student-api-1
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      - INSTANCE_NAME=instance-1
+    profiles: ["scaled"]
+
+  # Scaled Instance 2 (used for horizontal scaling demonstration)
+  student-api-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: student-api-2
+    restart: unless-stopped
+    ports:
+      - "8002:8000"
+    environment:
+      - INSTANCE_NAME=instance-2
+    profiles: ["scaled"]
+
+  # Nginx Load Balancer (distributes requests between student-api-1 and student-api-2)
+  nginx-lb:
+    image: nginx:alpine
+    container_name: student-nginx-lb
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - student-api-1
+      - student-api-2
+    profiles: ["scaled"]

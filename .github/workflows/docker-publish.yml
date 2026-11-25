@@ -1,44 +1,80 @@
-name: FastAPI Docker CI/CD
+name: FastAPI CI/CD Pipeline
 
-# Trigger whenever code is pushed to main
+# Trigger on push to main branch and support manual trigger
 on:
   push:
     branches:
       - main
-
-  # Allow manual execution
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
-# Required repository permissions
 permissions:
   contents: read
 
 jobs:
-  build-and-push:
+  # Job 1: Automated API and route testing
+  test:
+    name: Run Automated Tests
     runs-on: ubuntu-latest
 
     steps:
-
-      # Step 1: Download source code
       - name: Checkout Repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-      # Step 2: Login to Docker Hub
-      - name: Login to Docker Hub
-        uses: docker/login-action@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          python-version: "3.12"
+          cache: "pip"
 
-      # Step 3: Setup Docker Buildx
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v4
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      # Step 4: Build and push Docker image
-      - name: Build and Push Image
-        uses: docker/build-push-action@v7
+      - name: Run Test Suite (automationTesting.py)
+        run: |
+          python automationTesting.py
+
+  # Job 2: Build and push container to Docker Hub (executes only after tests pass)
+  build-and-push:
+    name: Build & Push Docker Image
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME || secrets.DOCKERUSERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN || secrets.DOCKERTOKEN }}
+
+      - name: Determine Docker Repository
+        id: repo_meta
+        run: |
+          DOCKER_USER="${{ secrets.DOCKERHUB_USERNAME || secrets.DOCKERUSERNAME }}"
+          if [ -z "$DOCKER_USER" ]; then
+            echo "ERROR: Docker Hub username secret is not set!"
+            exit 1
+          fi
+          echo "docker_user=$DOCKER_USER" >> $GITHUB_OUTPUT
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/fastapi-health:latest
+          tags: |
+            ${{ steps.repo_meta.outputs.docker_user }}/fastapi-app:latest
+            ${{ steps.repo_meta.outputs.docker_user }}/fastapi-app:v0.1
+            ${{ steps.repo_meta.outputs.docker_user }}/fastapi-health:latest
