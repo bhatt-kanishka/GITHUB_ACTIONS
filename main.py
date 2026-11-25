@@ -116,3 +116,12 @@ def new_route():
     return {
         "message": "Updated automatically using GitHub Actions!"
     }
+
+# Version info endpoint to verify CI/CD pipeline trigger
+@app.get("/version", tags=["General"])
+def get_version():
+    return {
+        "version": "1.0.1",
+        "ci_cd": "GitHub Actions",
+        "status": "active"
+    }
